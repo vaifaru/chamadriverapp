@@ -67,19 +67,6 @@ class HomeActivity : DaggerAppCompatActivity(), HomeContract.View {
     action.setStatus(started)
   }
 
-  override fun updateCurrentLocation(location: LatLng) {
-    withMap {
-      val latLngBuilder = LatLngBounds.builder().apply {
-        include(location)
-        destinationMarker?.let {
-          include(it.position)
-        }
-      }
-
-      animateCamera(CameraUpdateFactory.newLatLngBounds(latLngBuilder.build(), 200))
-    }
-  }
-
   override fun addDestinationMarker(location: LatLng) {
     withMap {
       if (destinationMarker == null) {

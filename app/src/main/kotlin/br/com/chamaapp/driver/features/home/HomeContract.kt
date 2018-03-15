@@ -10,7 +10,6 @@ object HomeContract {
     fun actionClicks() : Observable<Boolean>
     fun setStarted(started: Boolean)
     fun showMessage(started: Int)
-    fun updateCurrentLocation(location: LatLng)
     fun addDestinationMarker(location: LatLng)
     fun playArrivedSong()
     fun showRoute(points: String?)
