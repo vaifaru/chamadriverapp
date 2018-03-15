@@ -1,7 +1,5 @@
 package br.com.chamaapp.driver.features.home
 
-import android.annotation.SuppressLint
-import android.util.Log
 import br.com.chamaapp.driver.R
 import br.com.chamaapp.driver.api.DriverApi
 import br.com.chamaapp.driver.api.model.OrderResponse
@@ -9,6 +7,10 @@ import br.com.chamaapp.driver.extensions.toInternal
 import br.com.chamaapp.driver.infra.di.module.SchedulersComposer
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.maps.model.LatLng
+import io.reactivex.Observable
+import io.reactivex.Single
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
 
 class HomePresenter(
     private val view: HomeActivity,
@@ -18,44 +20,26 @@ class HomePresenter(
     ) : HomeContract.Presenter, LocationCallback() {
 
   private val orderId = "78e8c5a0-286c-11e8-b6db-579bdd5713bc"
+  private val disposables = CompositeDisposable()
 
-  @SuppressLint("MissingPermission")
   override fun onCreate() {
     view.initMap()
 
-    api.getOrder(orderId)
-        .subscribeOn(schedulersComposer.executorScheduler())
+    getOrder().subscribe().compose()
+
+    observeAndDispatchLocations().subscribe().compose()
+
+    actionClicks().subscribe().compose()
+  }
+
+  override fun onDestroy() {
+    disposables.clear()
+  }
+
+  internal fun actionClicks(): Observable<Boolean> {
+    return view.actionClicks()
         .observeOn(schedulersComposer.mainThreadScheduler())
-        .doOnSuccess { view.addDestinationMarker(LatLng(it.destination.lat, it.destination.lng)) }
-        .doOnError {
-          view.showMessage(R.string.unexpected_error)
-          Log.e("Chama", it.message)
-        }
-        .retry()
-        .subscribe()
-
-    locationService.locationChanges()
-        .observeOn(schedulersComposer.mainThreadScheduler())
-        .doOnNext { view.updateCurrentLocation(it) }
-        .observeOn(schedulersComposer.executorScheduler())
-        .flatMapSingle { api.updateOrder(orderId, it.toInternal) }
-        .doOnError {
-          view.showMessage(R.string.unexpected_error)
-          Log.e("Chama", "Network Error", it)
-        }
-        .filter { it.state == OrderResponse.DELIVERED }
-        .doOnNext {
-          view.playArrivedSong()
-
-          locationService.stopLocationUpdates()
-          view.setStarted(false)
-          view.showMessage(R.string.arrived_message)
-        }
-        .retry()
-        .subscribe()
-
-    view.actionClicks()
-        .subscribe { started ->
+        .doOnNext { started ->
           when {
             started -> {
               locationService.stopLocationUpdates()
@@ -69,7 +53,34 @@ class HomePresenter(
             }
           }
         }
-
+        .retry()
   }
+
+  internal fun observeAndDispatchLocations(): Observable<OrderResponse> {
+    return locationService.locationChanges()
+        .observeOn(schedulersComposer.mainThreadScheduler())
+        .doOnNext { view.updateCurrentLocation(it) }
+        .observeOn(schedulersComposer.executorScheduler())
+        .flatMapSingle { api.updateOrder(orderId, it.toInternal) }
+        .filter { it.state == OrderResponse.DELIVERED }
+        .doOnNext {
+          locationService.stopLocationUpdates()
+          view.setStarted(false)
+          view.showMessage(R.string.arrived_message)
+        }
+        .doOnError { view.showMessage(R.string.unexpected_error) }
+        .retry()
+  }
+
+  internal fun getOrder(): Single<OrderResponse> {
+    return api.getOrder(orderId)
+        .subscribeOn(schedulersComposer.executorScheduler())
+        .observeOn(schedulersComposer.mainThreadScheduler())
+        .doOnSuccess { view.addDestinationMarker(LatLng(it.destination.lat, it.destination.lng)) }
+        .doOnError { view.showMessage(R.string.unexpected_error) }
+        .retry()
+  }
+
+  private fun Disposable.compose() = disposables.add(this)
 
 }

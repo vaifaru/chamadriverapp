@@ -3,7 +3,7 @@ package br.com.chamaapp.driver.features.home
 import com.google.android.gms.maps.model.LatLng
 import io.reactivex.Observable
 
-interface HomeContract {
+object HomeContract {
 
   interface View {
     fun initMap()
@@ -17,6 +17,7 @@ interface HomeContract {
 
   interface Presenter {
     fun onCreate()
+    fun onDestroy()
   }
 
 }
