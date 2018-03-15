@@ -37,6 +37,11 @@ class HomeActivity : DaggerAppCompatActivity(), HomeContract.View {
     presenter.onCreate()
   }
 
+  override fun onDestroy() {
+    super.onDestroy()
+    presenter.onDestroy()
+  }
+
   override fun showMessage(resId: Int) {
     Toast.makeText(this@HomeActivity, resId, Toast.LENGTH_SHORT).show()
   }

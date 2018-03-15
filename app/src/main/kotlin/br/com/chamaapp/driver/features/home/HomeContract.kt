@@ -17,6 +17,7 @@ object HomeContract {
 
   interface Presenter {
     fun onCreate()
+    fun onDestroy()
   }
 
 }
