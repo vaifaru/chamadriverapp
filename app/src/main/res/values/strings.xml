@@ -6,4 +6,5 @@
   <string name="location_sending_started">Location sending started</string>
   <string name="location_sending_stopped">Location sending stopped</string>
   <string name="unexpected_error">Unexpected error, try again later</string>
+  <string name="arrived_message">You have arrived</string>
 </resources>

@@ -8,7 +8,7 @@ interface HomeContract {
   interface View {
     fun initMap()
     fun actionClicks() : Observable<Boolean>
-    fun setStatus(started: Boolean)
+    fun setStarted(started: Boolean)
     fun showMessage(started: Int)
     fun updateCurrentLocation(location: LatLng)
     fun addDestinationMarker(location: LatLng)

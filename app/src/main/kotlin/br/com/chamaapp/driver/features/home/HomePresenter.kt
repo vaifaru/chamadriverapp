@@ -17,7 +17,7 @@ class HomePresenter(
     private val schedulersComposer: SchedulersComposer
     ) : HomeContract.Presenter, LocationCallback() {
 
-  var orderId = "5cc97000-2712-11e8-ba85-c917109fb6e3"
+  private val orderId = "78e8c5a0-286c-11e8-b6db-579bdd5713bc"
 
   @SuppressLint("MissingPermission")
   override fun onCreate() {
@@ -39,14 +39,17 @@ class HomePresenter(
         .doOnNext { view.updateCurrentLocation(it) }
         .observeOn(schedulersComposer.executorScheduler())
         .flatMapSingle { api.updateOrder(orderId, it.toInternal) }
-        .doOnNext {
-          if (it.state == OrderResponse.DELIVERED) {
-            view.playArrivedSong()
-          }
-        }
         .doOnError {
           view.showMessage(R.string.unexpected_error)
           Log.e("Chama", "Network Error", it)
+        }
+        .filter { it.state == OrderResponse.DELIVERED }
+        .doOnNext {
+          view.playArrivedSong()
+
+          locationService.stopLocationUpdates()
+          view.setStarted(false)
+          view.showMessage(R.string.arrived_message)
         }
         .retry()
         .subscribe()
@@ -56,12 +59,12 @@ class HomePresenter(
           when {
             started -> {
               locationService.stopLocationUpdates()
-              view.setStatus(false)
+              view.setStarted(false)
               view.showMessage(R.string.location_sending_stopped)
             }
             else -> {
               locationService.startLocationUpdates()
-              view.setStatus(true)
+              view.setStarted(true)
               view.showMessage(R.string.location_sending_started)
             }
           }
