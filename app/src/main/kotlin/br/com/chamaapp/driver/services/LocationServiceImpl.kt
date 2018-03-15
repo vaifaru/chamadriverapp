@@ -1,4 +1,4 @@
-package br.com.chamaapp.driver.features.home
+package br.com.chamaapp.driver.services
 
 import android.annotation.SuppressLint
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -6,12 +6,15 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.maps.model.LatLng
+import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
+import javax.inject.Inject
 
 @SuppressLint("MissingPermission")
-class LocationService(
+class LocationServiceImpl @Inject constructor(
     private val fusedLocationClient: FusedLocationProviderClient,
-    private val locationRequest: LocationRequest) {
+    private val locationRequest: LocationRequest
+) : LocationService {
 
   private val publisher = PublishSubject.create<LatLng>()
 
@@ -31,14 +34,13 @@ class LocationService(
     }
   }
 
-  fun locationChanges() = publisher
+  override fun locationChanges(): Observable<LatLng> = publisher
 
-  fun startLocationUpdates() {
+  override fun startLocationUpdates() {
     fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
   }
 
-  fun stopLocationUpdates() {
+  override fun stopLocationUpdates() {
     fusedLocationClient.removeLocationUpdates(locationCallback)
   }
-
 }

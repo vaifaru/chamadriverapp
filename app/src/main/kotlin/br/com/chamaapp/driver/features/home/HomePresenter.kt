@@ -5,19 +5,21 @@ import br.com.chamaapp.driver.api.DriverApi
 import br.com.chamaapp.driver.api.model.OrderResponse
 import br.com.chamaapp.driver.extensions.toInternal
 import br.com.chamaapp.driver.infra.di.module.SchedulersComposer
+import br.com.chamaapp.driver.services.LocationService
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.maps.model.LatLng
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
+import javax.inject.Inject
 
-class HomePresenter(
-    private val view: HomeActivity,
+class HomePresenter @Inject constructor(
+    private val view: HomeContract.View,
     private val locationService: LocationService,
     private val api: DriverApi,
     private val schedulersComposer: SchedulersComposer
-    ) : HomeContract.Presenter, LocationCallback() {
+) : HomeContract.Presenter, LocationCallback() {
 
   private val orderId = "5cc97000-2712-11e8-ba85-c917109fb6e3"
   private val disposables = CompositeDisposable()

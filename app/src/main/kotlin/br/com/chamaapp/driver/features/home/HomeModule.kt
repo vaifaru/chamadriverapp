@@ -2,7 +2,8 @@ package br.com.chamaapp.driver.features.home
 
 import android.content.Context
 import br.com.chamaapp.driver.api.DriverApi
-import br.com.chamaapp.driver.infra.di.module.SchedulersComposer
+import br.com.chamaapp.driver.services.LocationService
+import br.com.chamaapp.driver.services.LocationServiceImpl
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
@@ -11,6 +12,9 @@ import dagger.Provides
 
 @Module
 class HomeModule {
+
+  @Provides
+  fun providesView(homeActivity: HomeActivity): HomeContract.View = homeActivity
 
   @Provides
   fun providesLocationRequest(): LocationRequest {
@@ -23,19 +27,15 @@ class HomeModule {
   }
 
   @Provides
-  fun providesFusedLocationClient(context: Context) = LocationServices.getFusedLocationProviderClient(context)
+  fun providesFusedLocationClient(context: Context): FusedLocationProviderClient =
+      LocationServices.getFusedLocationProviderClient(context)
 
   @Provides
-  fun providesHomePresenter(activity: HomeActivity,
-      locationService: LocationService,
-      schedulersComposer: SchedulersComposer): HomePresenter {
-    return HomePresenter(activity, locationService,  DriverApi.create(), schedulersComposer)
-  }
+  fun providesDriverApi(): DriverApi = DriverApi.create()
 
   @Provides
-  fun providesLocationService(fusedLocationClient: FusedLocationProviderClient,
-      locationRequest: LocationRequest) : LocationService {
-    return LocationService(fusedLocationClient, locationRequest)
+  fun providesLocationService(locationServiceImpl: LocationServiceImpl) : LocationService {
+    return locationServiceImpl
   }
 
 }
