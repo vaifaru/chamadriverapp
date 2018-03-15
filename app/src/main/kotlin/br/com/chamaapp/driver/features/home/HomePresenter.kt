@@ -31,7 +31,7 @@ class HomePresenter @Inject constructor(
   override fun onCreate() {
     view.initMap()
 
-    getOrder().subscribe().compose()
+    getOrder()
 
     observeAndDispatchLocations()
 
@@ -83,7 +83,7 @@ class HomePresenter @Inject constructor(
         }
         .observeOn(schedulersComposer.mainThreadScheduler())
         .doOnNext { parseRoute(it) }
-        .retry()
+        .retry(3)
         .subscribe()
         .compose()
   }
@@ -93,13 +93,16 @@ class HomePresenter @Inject constructor(
     route?.let { view.showRoute(it.points) }
   }
 
-  internal fun getOrder(): Single<OrderResponse> {
-    return driverApi.getOrder(orderId)
+  private fun getOrder() {
+    driverApi.getOrder(orderId)
         .subscribeOn(schedulersComposer.executorScheduler())
         .observeOn(schedulersComposer.mainThreadScheduler())
-        .doOnSuccess { view.addDestinationMarker(LatLng(it.destination.lat, it.destination.lng)) }
-        .doOnError { view.showMessage(R.string.unexpected_error) }
-        .retry()
+        .retry(3)
+        .subscribe({
+          view.addDestinationMarker(LatLng(it.destination.lat, it.destination.lng))
+        }, {
+          view.showMessage(R.string.unexpected_error)
+        })
   }
 
   private fun Disposable.compose() = disposables.add(this)
