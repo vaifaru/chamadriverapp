@@ -62,7 +62,7 @@ class HomePresenter @Inject constructor(
         .retry()
   }
 
-  internal fun observeAndDispatchLocations() {
+  private fun observeAndDispatchLocations() {
     locationService.locationChanges()
         .observeOn(schedulersComposer.mainThreadScheduler())
         .observeOn(schedulersComposer.executorScheduler())
@@ -83,7 +83,6 @@ class HomePresenter @Inject constructor(
         }
         .observeOn(schedulersComposer.mainThreadScheduler())
         .doOnNext { parseRoute(it) }
-        .retry(3)
         .subscribe()
         .compose()
   }
@@ -97,7 +96,6 @@ class HomePresenter @Inject constructor(
     driverApi.getOrder(orderId)
         .subscribeOn(schedulersComposer.executorScheduler())
         .observeOn(schedulersComposer.mainThreadScheduler())
-        .retry(3)
         .subscribe({
           view.addDestinationMarker(LatLng(it.destination.lat, it.destination.lng))
         }, {

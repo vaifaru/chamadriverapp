@@ -4,27 +4,27 @@ import com.google.gson.annotations.SerializedName
 
 class DirectionsApiEntity(
     val status: Status,
-    val routes: Array<Route>?
+    val routes: List<Route>?
 ) {
 
-  inner class Route(
+  class Route(
       @SerializedName("overview_polyline")
       val polyline: Polyline?,
       val legs: Array<Leg>?
   )
 
-  inner class Polyline(
+  class Polyline(
       val points: String?
   )
 
-  inner class Leg(
+  class Leg(
       val distance: TextValue,
       val duration: TextValue,
       @SerializedName("duration_in_traffic")
       val durationInTraffic: TextValue?
   )
 
-  inner class TextValue(
+  class TextValue(
       val text: String,
       val value: Double
   )
