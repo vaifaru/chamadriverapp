@@ -2,6 +2,7 @@ package br.com.chamaapp.driver.features.home
 
 import android.content.Context
 import br.com.chamaapp.driver.api.DriverApi
+import br.com.chamaapp.driver.api.GoogleMapsApi
 import br.com.chamaapp.driver.services.LocationService
 import br.com.chamaapp.driver.services.LocationServiceImpl
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -32,6 +33,9 @@ class HomeModule {
 
   @Provides
   fun providesDriverApi(): DriverApi = DriverApi.create()
+
+  @Provides
+  fun providesGoogleMapsApi(): GoogleMapsApi = GoogleMapsApi.create()
 
   @Provides
   fun providesLocationService(locationServiceImpl: LocationServiceImpl) : LocationService {

@@ -20,7 +20,8 @@ import javax.inject.Inject
 class HomePresenter @Inject constructor(
     private val view: HomeContract.View,
     private val locationService: LocationService,
-    private val api: DriverApi,
+    private val driverApi: DriverApi,
+    private val googleMapsApi: GoogleMapsApi,
     private val schedulersComposer: SchedulersComposer
 ) : HomeContract.Presenter, LocationCallback() {
 
@@ -61,14 +62,11 @@ class HomePresenter @Inject constructor(
         .retry()
   }
 
-  private val googleapi = GoogleMapsApi.create()
-
   internal fun observeAndDispatchLocations() {
     locationService.locationChanges()
         .observeOn(schedulersComposer.mainThreadScheduler())
-        .doOnNext { view.updateCurrentLocation(it) }
         .observeOn(schedulersComposer.executorScheduler())
-        .flatMapSingle { api.updateOrder(orderId, it.toInternal) }
+        .flatMapSingle { driverApi.updateOrder(orderId, it.toInternal) }
         .doOnNext {
           if (it.state == OrderResponse.DELIVERED) {
             locationService.stopLocationUpdates()
@@ -78,7 +76,7 @@ class HomePresenter @Inject constructor(
         }
         .doOnError { view.showMessage(R.string.unexpected_error) }
         .flatMapSingle {
-          googleapi.getRoute(
+          googleMapsApi.getRoute(
               "${it.currentLocation.lat}, ${it.currentLocation.lng}",
               "${it.destination.lat},${it.destination.lng}",
               true)
@@ -96,7 +94,7 @@ class HomePresenter @Inject constructor(
   }
 
   internal fun getOrder(): Single<OrderResponse> {
-    return api.getOrder(orderId)
+    return driverApi.getOrder(orderId)
         .subscribeOn(schedulersComposer.executorScheduler())
         .observeOn(schedulersComposer.mainThreadScheduler())
         .doOnSuccess { view.addDestinationMarker(LatLng(it.destination.lat, it.destination.lng)) }
