@@ -2,8 +2,11 @@ package br.com.chamaapp.driver.features.home
 
 import br.com.chamaapp.driver.R
 import br.com.chamaapp.driver.api.DriverApi
+import br.com.chamaapp.driver.api.GoogleMapsApi
+import br.com.chamaapp.driver.api.model.DirectionsApiEntity
 import br.com.chamaapp.driver.api.model.OrderResponse
 import br.com.chamaapp.driver.extensions.toInternal
+import br.com.chamaapp.driver.infra.di.model.DirectionsMapper
 import br.com.chamaapp.driver.infra.di.module.SchedulersComposer
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.maps.model.LatLng
@@ -17,7 +20,7 @@ class HomePresenter(
     private val locationService: LocationService,
     private val api: DriverApi,
     private val schedulersComposer: SchedulersComposer
-    ) : HomeContract.Presenter, LocationCallback() {
+) : HomeContract.Presenter, LocationCallback() {
 
   private val orderId = "78e8c5a0-286c-11e8-b6db-579bdd5713bc"
   private val disposables = CompositeDisposable()
@@ -27,7 +30,7 @@ class HomePresenter(
 
     getOrder().subscribe().compose()
 
-    observeAndDispatchLocations().subscribe().compose()
+    observeAndDispatchLocations()
 
     actionClicks().subscribe().compose()
   }
@@ -56,20 +59,38 @@ class HomePresenter(
         .retry()
   }
 
-  internal fun observeAndDispatchLocations(): Observable<OrderResponse> {
-    return locationService.locationChanges()
+  private val googleapi = GoogleMapsApi.create()
+
+  internal fun observeAndDispatchLocations() {
+    locationService.locationChanges()
         .observeOn(schedulersComposer.mainThreadScheduler())
         .doOnNext { view.updateCurrentLocation(it) }
         .observeOn(schedulersComposer.executorScheduler())
         .flatMapSingle { api.updateOrder(orderId, it.toInternal) }
-        .filter { it.state == OrderResponse.DELIVERED }
         .doOnNext {
-          locationService.stopLocationUpdates()
-          view.setStarted(false)
-          view.showMessage(R.string.arrived_message)
+          if (it.state == OrderResponse.DELIVERED) {
+            locationService.stopLocationUpdates()
+            view.playArrivedSong()
+            view.setStarted(false)
+          }
         }
         .doOnError { view.showMessage(R.string.unexpected_error) }
+        .flatMapSingle {
+          googleapi.getRoute(
+              "${it.currentLocation.lat}, ${it.currentLocation.lng}",
+              "${it.destination.lat},${it.destination.lng}",
+              true)
+        }
+        .observeOn(schedulersComposer.mainThreadScheduler())
+        .doOnNext { parseRoute(it) }
         .retry()
+        .subscribe()
+        .compose()
+  }
+
+  private fun parseRoute(directionsApiEntity: DirectionsApiEntity) {
+    val route = DirectionsMapper.parseDirection(directionsApiEntity)
+    route?.let { view.showRoute(it.points) }
   }
 
   internal fun getOrder(): Single<OrderResponse> {

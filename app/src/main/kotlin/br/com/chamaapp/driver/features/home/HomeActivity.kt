@@ -14,6 +14,9 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.Polyline
+import com.google.android.gms.maps.model.PolylineOptions
+import com.google.maps.android.PolyUtil
 import com.jakewharton.rxbinding2.view.RxView
 import dagger.android.support.DaggerAppCompatActivity
 import io.reactivex.Observable
@@ -28,6 +31,7 @@ class HomeActivity : DaggerAppCompatActivity(), HomeContract.View {
   private val mapFragment by lazy { SupportMapFragment.newInstance() }
 
   private var destinationMarker: Marker? = null
+  private var currentPolyline: Polyline? = null
 
   override fun actionClicks(): Observable<Boolean> = RxView.clicks(action).map { action.started }
 
@@ -54,6 +58,8 @@ class HomeActivity : DaggerAppCompatActivity(), HomeContract.View {
 
     withMap {
       isMyLocationEnabled = true
+      setMaxZoomPreference(17f)
+      setPadding(10, 10, 10, 10)
     }
   }
 
@@ -85,6 +91,35 @@ class HomeActivity : DaggerAppCompatActivity(), HomeContract.View {
       }
     }
 
+  }
+
+  override fun showRoute(points: String?) {
+    withMap {
+      currentPolyline?.let {
+        it.remove()
+      }
+
+      val options = PolylineOptions()
+          .color(R.color.colorAccent)
+          .width(8f)
+          .addAll(PolyUtil.decode(points))
+
+      currentPolyline = addPolyline(options)
+    }
+  }
+
+  private fun fitZoom() {
+    withMap {
+      val latLngBuilder = LatLngBounds.builder().apply {
+        destinationMarker?.let {
+          include(it.position)
+        }
+        currentPolyline?.points?.forEach {
+          include(it)
+        }
+      }
+      animateCamera(CameraUpdateFactory.newLatLngBounds(latLngBuilder.build(), 200))
+    }
   }
 
   private fun withMap(action: GoogleMap.() -> Unit) {
