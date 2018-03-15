@@ -13,6 +13,7 @@ object HomeContract {
     fun updateCurrentLocation(location: LatLng)
     fun addDestinationMarker(location: LatLng)
     fun playArrivedSong()
+    fun showRoute(points: String?)
   }
 
   interface Presenter {
