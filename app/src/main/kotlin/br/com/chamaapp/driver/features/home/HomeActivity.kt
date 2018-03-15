@@ -105,6 +105,7 @@ class HomeActivity : DaggerAppCompatActivity(), HomeContract.View {
           .addAll(PolyUtil.decode(points))
 
       currentPolyline = addPolyline(options)
+      fitZoom()
     }
   }
 
