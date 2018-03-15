@@ -57,7 +57,7 @@ class HomeActivity : DaggerAppCompatActivity(), HomeContract.View {
     }
   }
 
-  override fun setStatus(started: Boolean) {
+  override fun setStarted(started: Boolean) {
     action.setStatus(started)
   }
 
